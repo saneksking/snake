@@ -10,11 +10,13 @@ red = (213, 50, 80)
 green = (0, 255, 0)
 blue = (50, 153, 213)
 darkblue = (0, 0, 255)
+darkgreen = (0, 200, 0)
 
+background_image = pygame.image.load('data/images/snake.png')
 title_font = pygame.font.SysFont("bahnschrift", 50)
 
 width = 600
-height = 400
+height = 600
 display = pygame.display.set_mode((width, height))
 pygame.display.set_caption('Snake')
 
@@ -44,13 +46,20 @@ def end(msg, color):
 
 
 def draw_start_buttons():
-    start_button_color = green
-    settings_button_color = darkblue
+    start_button_color = (0, 200, 0)
+    settings_button_color = (0, 0, 200)
     start_button_rect = pygame.Rect(width / 4, height / 3, width / 2, 50)
     settings_button_rect = pygame.Rect(width / 4, height / 2, width / 2, 50)
 
-    pygame.draw.rect(display, start_button_color, start_button_rect)
-    pygame.draw.rect(display, settings_button_color, settings_button_rect)
+    mouse_pos = pygame.mouse.get_pos()
+
+    if start_button_rect.collidepoint(mouse_pos):
+        start_button_color = (0, 150, 0)
+    if settings_button_rect.collidepoint(mouse_pos):
+        settings_button_color = (0, 0, 150)
+
+    pygame.draw.rect(display, start_button_color, start_button_rect, border_radius=10)
+    pygame.draw.rect(display, settings_button_color, settings_button_rect, border_radius=10)
 
     start_text = font_style.render("Start", True, white)
     settings_text = font_style.render("Settings", True, white)
@@ -74,19 +83,27 @@ def settings_screen():
     text = str(snake_speed)
 
     colors = {
-        "Green": (0, 255, 0),
-        "Red": (255, 0, 0),
-        "Blue": (0, 0, 255),
-        "Yellow": (255, 255, 0),
+        "Green": (0, 200, 0),
+        "Red": (200, 0, 0),
+        "Blue": (0, 0, 200),
+        "Yellow": (200, 200, 0),
     }
     selected_color = snake_color
 
     while True:
-        display.fill(blue)
+        display.blit(background_image, (0, 0))
 
-        # Заголовок "Settings"
         settings_title = title_font.render("Settings", True, green)
-        display.blit(settings_title, (width / 2 - settings_title.get_width() / 2, height / 6))
+        title_rect = settings_title.get_rect(center=(width / 2, settings_title.get_height() / 2))
+
+        padding = 10
+        rect_x = 0
+        rect_y = 0
+        rect_width = width
+        rect_height = title_rect.height + padding * 2
+        pygame.draw.rect(display, black, (rect_x, rect_y, rect_width, rect_height))
+
+        display.blit(settings_title, (title_rect.x, title_rect.y + padding))
 
         label_text = font_style.render("Speed:", True, white)
         display.blit(label_text, (label_rect.x, label_rect.y + 10))
@@ -108,7 +125,13 @@ def settings_screen():
             button_rect = pygame.Rect(width / 4 + i * (button_width + button_spacing), button_y, button_width, 30)
             if button_rect.x + button_width > width - 20:
                 break
-            pygame.draw.rect(display, color_value, button_rect)
+
+            button_color = color_value
+            if color_name == selected_color:
+                button_color = tuple(min(c + 50, 255) for c in color_value)
+
+            pygame.draw.rect(display, button_color, button_rect, border_radius=10)
+
             if color_name == "Yellow":
                 color_text = font_style.render("Yellow", True, black)
             else:
@@ -119,7 +142,10 @@ def settings_screen():
                 selected_color = color_value
 
         apply_button_rect = pygame.Rect(width / 4, button_y + 50, width / 2, 50)
-        pygame.draw.rect(display, green, apply_button_rect)
+        if apply_button_rect.collidepoint(pygame.mouse.get_pos()):
+            pygame.draw.rect(display, (0, 150, 0), apply_button_rect, border_radius=10)
+        else:
+            pygame.draw.rect(display, (0, 200, 0), apply_button_rect, border_radius=10)
         apply_text = font_style.render("Apply", True, white)
         display.blit(apply_text, (apply_button_rect.x + (apply_button_rect.width - apply_text.get_width())
                                   / 2, apply_button_rect.y + 10))
@@ -161,16 +187,25 @@ def settings_screen():
                         text = text[:-1]
                     else:
                         text += event.unicode
-        pygame.display.update()
 
+            pygame.display.update()
 
 
 def start_screen():
     while True:
-        display.fill(blue)
+        display.blit(background_image, (0, 0))
 
         title_text = title_font.render("Old Snake", True, green)
-        display.blit(title_text, (width / 2 - title_text.get_width() / 2, height / 6))
+        title_rect = title_text.get_rect(center=(width / 2, title_text.get_height() / 2))
+
+        padding = 10
+        rect_x = 0
+        rect_y = 0
+        rect_width = width
+        rect_height = title_rect.height + padding * 2
+        pygame.draw.rect(display, black, (rect_x, rect_y, rect_width, rect_height))
+
+        display.blit(title_text, (title_rect.x, title_rect.y + padding))
 
         start_button_rect, settings_button_rect = draw_start_buttons()
         pygame.display.update()
@@ -208,7 +243,7 @@ def game_loop():
     while not game_over:
         while game_close:
             display.fill(blue)
-            end("You lost! Press C to continue or Q to exit!", red)
+            end("You lost! Press C to continue or Q to exit!", green)
             your_score(score)
             pygame.display.update()
 
@@ -245,12 +280,11 @@ def game_loop():
 
         if paused:
             display.fill(blue)
-            end("Paused! Press SPACE to continue", red)
+            end("Paused! Press SPACE to continue", green)
             your_score(score)
             pygame.display.update()
             continue
 
-        # Логика игры
         if x1 >= width or x1 < 0 or y1 >= height or y1 < 0:
             game_close = True
 
