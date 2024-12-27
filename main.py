@@ -13,6 +13,12 @@ darkblue = (0, 0, 255)
 darkgreen = (0, 200, 0)
 
 background_image = pygame.image.load('data/images/snake.png')
+background_music = 'data/music/background_music.mp3'
+pygame.mixer.music.set_volume(0.5)
+button_click_sound = pygame.mixer.Sound('data/sounds/button.wav')
+eat_sound = pygame.mixer.Sound('data/sounds/eat.wav')
+
+
 title_font = pygame.font.SysFont("bahnschrift", 50)
 
 width = 600
@@ -29,9 +35,13 @@ font_style = pygame.font.SysFont("bahnschrift", 25)
 score_font = pygame.font.SysFont("comicsansms", 35)
 
 
-def our_snake(snake, snake_list):
-    for x in snake_list:
-        pygame.draw.rect(display, snake_color, [x[0], x[1], snake, snake_block])
+def our_snake(snake_block, snake_list, head_color):
+    for x in snake_list[:-1]:
+        pygame.draw.rect(display, snake_color, [x[0], x[1], snake_block, snake_block], border_radius=5)
+
+    head_x, head_y = snake_list[-1]
+    pygame.draw.circle(display, head_color,
+                       (head_x + snake_block // 2, head_y + snake_block // 2), snake_block // 2)
 
 
 def your_score(score):
@@ -46,17 +56,17 @@ def end(msg, color):
 
 
 def draw_start_buttons():
-    start_button_color = (0, 200, 0)
-    settings_button_color = (0, 0, 200)
+    start_button_color = (148, 148, 27)
+    settings_button_color = (120, 188, 153)
     start_button_rect = pygame.Rect(width / 4, height / 3, width / 2, 50)
     settings_button_rect = pygame.Rect(width / 4, height / 2, width / 2, 50)
 
     mouse_pos = pygame.mouse.get_pos()
 
     if start_button_rect.collidepoint(mouse_pos):
-        start_button_color = (0, 150, 0)
+        start_button_color = (78, 66, 24)
     if settings_button_rect.collidepoint(mouse_pos):
-        settings_button_color = (0, 0, 150)
+        settings_button_color = (52, 84, 87)
 
     pygame.draw.rect(display, start_button_color, start_button_rect, border_radius=10)
     pygame.draw.rect(display, settings_button_color, settings_button_rect, border_radius=10)
@@ -93,7 +103,7 @@ def settings_screen():
     while True:
         display.blit(background_image, (0, 0))
 
-        settings_title = title_font.render("Settings", True, green)
+        settings_title = title_font.render("Settings", True, (148, 148, 27))
         title_rect = settings_title.get_rect(center=(width / 2, settings_title.get_height() / 2))
 
         padding = 10
@@ -105,7 +115,7 @@ def settings_screen():
 
         display.blit(settings_title, (title_rect.x, title_rect.y + padding))
 
-        label_text = font_style.render("Speed:", True, white)
+        label_text = font_style.render("Speed:", True, green)
         display.blit(label_text, (label_rect.x, label_rect.y + 10))
 
         txt_surface = font_style.render(text, True, color)
@@ -115,7 +125,7 @@ def settings_screen():
         display.blit(txt_surface, (input_box.x + 5, input_box.y + 5))
         pygame.draw.rect(display, color, input_box, 2)
 
-        color_label = font_style.render("Snake Color:", True, white)
+        color_label = font_style.render("Snake Color:", True, green)
         display.blit(color_label, (label_rect.x, label_rect.y + 70))
 
         button_y = label_rect.y + 100
@@ -143,14 +153,15 @@ def settings_screen():
 
         apply_button_rect = pygame.Rect(width / 4, button_y + 50, width / 2, 50)
         if apply_button_rect.collidepoint(pygame.mouse.get_pos()):
-            pygame.draw.rect(display, (0, 150, 0), apply_button_rect, border_radius=10)
+            pygame.draw.rect(display, (78, 66, 24), apply_button_rect, border_radius=10)
         else:
-            pygame.draw.rect(display, (0, 200, 0), apply_button_rect, border_radius=10)
+            pygame.draw.rect(display, (148, 148, 27), apply_button_rect, border_radius=10)
         apply_text = font_style.render("Apply", True, white)
         display.blit(apply_text, (apply_button_rect.x + (apply_button_rect.width - apply_text.get_width())
                                   / 2, apply_button_rect.y + 10))
 
         if pygame.mouse.get_pressed()[0] and apply_button_rect.collidepoint(pygame.mouse.get_pos()):
+            button_click_sound.play()
             snake_color = selected_color
             return
 
@@ -192,10 +203,13 @@ def settings_screen():
 
 
 def start_screen():
+    pygame.mixer.music.stop()
+    pygame.mixer.music.load('data/music/music.mp3')
+    pygame.mixer.music.play(-1)
     while True:
         display.blit(background_image, (0, 0))
 
-        title_text = title_font.render("Old Snake", True, green)
+        title_text = title_font.render("Old Snake", True, (148, 148, 27))
         title_rect = title_text.get_rect(center=(width / 2, title_text.get_height() / 2))
 
         padding = 10
@@ -215,14 +229,17 @@ def start_screen():
                 pygame.quit()
                 quit()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    if start_button_rect.collidepoint(event.pos):
-                        return
-                    elif settings_button_rect.collidepoint(event.pos):
-                        settings_screen()
+                if start_button_rect.collidepoint(event.pos):
+                    button_click_sound.play()
+                    pygame.mixer.music.stop()
+                    return
+                elif settings_button_rect.collidepoint(event.pos):
+                    button_click_sound.play()
+                    settings_screen()
 
 
 def game_loop():
+    pygame.mixer.music.stop()  # Остановка фоновой музыки, если она играет
     game_over = False
     game_close = False
     paused = False
@@ -243,6 +260,11 @@ def game_loop():
     while not game_over:
         while game_close:
             display.fill(blue)
+            pygame.mixer.music.stop()
+
+            pygame.mixer.music.load('data/music/game_over.mp3')
+            pygame.mixer.music.play(-1)
+
             end("You lost! Press C to continue or Q to exit!", green)
             your_score(score)
             pygame.display.update()
@@ -299,9 +321,9 @@ def game_loop():
 
         for x in snake_list[:-1]:
             if x == snake_head:
-                game_close = False
+                game_close = True
 
-        our_snake(snake_block, snake_list)
+        our_snake(snake_block, snake_list, head_color=(255, 255, 255))
         your_score(score)
 
         pygame.display.update()
@@ -311,6 +333,7 @@ def game_loop():
             foody = round(random.randrange(0, height - snake_block) / 10.0) * 10.0
             length_of_snake += 1
             score += 1
+            eat_sound.play()
 
         clock.tick(snake_speed)
 
