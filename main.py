@@ -239,7 +239,7 @@ def start_screen():
 
 
 def game_loop():
-    pygame.mixer.music.stop()  # Остановка фоновой музыки, если она играет
+    pygame.mixer.music.stop()
     game_over = False
     game_close = False
     paused = False
@@ -266,7 +266,7 @@ def game_loop():
             pygame.mixer.music.play(-1)
 
             end("You lost! Press C to continue or Q to exit!", green)
-            your_score(score)
+            your_score(score * snake_speed)
             pygame.display.update()
 
             for event in pygame.event.get():
@@ -324,7 +324,7 @@ def game_loop():
                 game_close = True
 
         our_snake(snake_block, snake_list, head_color=(255, 255, 255))
-        your_score(score)
+        your_score(score * snake_speed)
 
         pygame.display.update()
 
