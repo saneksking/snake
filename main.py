@@ -1,6 +1,8 @@
 import pygame
 import random
 
+from tools.database import save_score, get_leaderboard_records
+
 pygame.init()
 
 white = (255, 255, 255)
@@ -238,6 +240,88 @@ def start_screen():
                     settings_screen()
 
 
+def enter_nickname(score):
+    input_box_width = width / 2
+    input_box_height = 50
+    input_box = pygame.Rect((width - input_box_width) / 2, (height - input_box_height) / 2, input_box_width,
+                            input_box_height)
+
+    color_inactive = pygame.Color('lightskyblue3')
+    color_active = pygame.Color('dodgerblue2')
+    color = color_inactive
+    active = False
+    nickname = ''
+
+    # Создаем текст для надписи
+    label_text = font_style.render("Enter your nickname:", True, green)
+    label_rect = label_text.get_rect(center=(width / 2, input_box.top - 20))
+
+    while True:
+        display.fill(blue)
+        your_score(score)
+
+        display.blit(label_text, label_rect)
+
+        txt_surface = font_style.render(nickname, True, color)
+        input_box.w = max(200, txt_surface.get_width() + 10)
+        pygame.draw.rect(display, white, input_box)
+        display.blit(txt_surface, (input_box.x + 5, input_box.y + 5))
+        pygame.draw.rect(display, color, input_box, 2)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if input_box.collidepoint(event.pos):
+                    active = not active
+                else:
+                    active = False
+                color = color_active if active else color_inactive
+            if event.type == pygame.KEYDOWN:
+                if active:
+                    if event.key == pygame.K_RETURN:
+                        save_score(nickname, score)
+                        return
+                    elif event.key == pygame.K_BACKSPACE:
+                        nickname = nickname[:-1]
+                    else:
+                        nickname += event.unicode
+
+        pygame.display.update()
+
+
+def display_leaderboard(records):
+    start_y = 100
+    padding = 30
+
+    title_text = title_font.render("Leaderboard", True, green)
+    display.blit(title_text, (width / 2 - title_text.get_width() / 2, start_y - 50))
+
+    for index, (nickname, score) in enumerate(records):
+        record_text = font_style.render(f"{index + 1}. {nickname} - {score}", True, white)
+        display.blit(record_text, (width / 2 - record_text.get_width() / 2, start_y + index * padding))
+
+    pygame.display.update()
+
+
+def show_leaderboard_screen():
+    records = get_leaderboard_records()
+    while True:
+        display.fill(blue)
+        display_leaderboard(records)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q:
+                    return
+
+        pygame.display.update()
+
+
 def game_loop():
     pygame.mixer.music.stop()
     game_over = False
@@ -276,34 +360,35 @@ def game_loop():
                         game_close = False
                     if event.key == pygame.K_c:
                         game_close = False
+                        enter_nickname(score * snake_speed)
+                        show_leaderboard_screen()
                         start_screen()
                         game_loop()
 
+        # Перемещение змейки
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 game_over = True
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
+                if event.key == pygame.K_LEFT or event.key == pygame.K_a:
+                    x1_change = -snake_block
+                    y1_change = 0
+                elif event.key == pygame.K_RIGHT or event.key == pygame.K_d:
+                    x1_change = snake_block
+                    y1_change = 0
+                elif event.key == pygame.K_UP or event.key == pygame.K_w:
+                    y1_change = -snake_block
+                    x1_change = 0
+                elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
+                    y1_change = snake_block
+                    x1_change = 0
+                elif event.key == pygame.K_SPACE:  # Добавлено для паузы
                     paused = not paused
-
-                if not paused:  # Обрабатываем управление только если не на паузе
-                    if event.key == pygame.K_LEFT or event.key == pygame.K_a:
-                        x1_change = -snake_block
-                        y1_change = 0
-                    elif event.key == pygame.K_RIGHT or event.key == pygame.K_d:
-                        x1_change = snake_block
-                        y1_change = 0
-                    elif event.key == pygame.K_UP or event.key == pygame.K_w:
-                        y1_change = -snake_block
-                        x1_change = 0
-                    elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
-                        y1_change = snake_block
-                        x1_change = 0
 
         if paused:
             display.fill(blue)
             end("Paused! Press SPACE to continue", green)
-            your_score(score)
+            your_score(score * snake_speed)
             pygame.display.update()
             continue
 
