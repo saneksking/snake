@@ -1,9 +1,10 @@
+import os
+import sys
+
 import pygame
 import random
 
 from tools.database import save_score, get_leaderboard_records
-
-pygame.init()
 
 white = (255, 255, 255)
 yellow = (255, 255, 102)
@@ -14,11 +15,25 @@ blue = (50, 153, 213)
 darkblue = (0, 0, 255)
 darkgreen = (0, 200, 0)
 
-background_image = pygame.image.load('data/images/snake.png')
-background_music = 'data/music/background_music.mp3'
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
+
+pygame.init()
+
+
+background_image = pygame.image.load(resource_path('data/images/snake.png'))
+background_music = resource_path('data/music/music.mp3')
+button_click_sound = pygame.mixer.Sound(resource_path('data/sounds/button.wav'))
+eat_sound = pygame.mixer.Sound(resource_path('data/sounds/eat.wav'))
+
 pygame.mixer.music.set_volume(0.5)
-button_click_sound = pygame.mixer.Sound('data/sounds/button.wav')
-eat_sound = pygame.mixer.Sound('data/sounds/eat.wav')
 
 
 title_font = pygame.font.SysFont("bahnschrift", 50)
@@ -206,7 +221,7 @@ def settings_screen():
 
 def start_screen():
     pygame.mixer.music.stop()
-    pygame.mixer.music.load('data/music/music.mp3')
+    pygame.mixer.music.load(resource_path('data/music/music.mp3'))
     pygame.mixer.music.play(-1)
     while True:
         display.blit(background_image, (0, 0))
@@ -345,7 +360,7 @@ def game_loop():
             display.fill(blue)
             pygame.mixer.music.stop()
 
-            pygame.mixer.music.load('data/music/game_over.mp3')
+            pygame.mixer.music.load(resource_path('data/music/game_over.mp3'))
             pygame.mixer.music.play(-1)
 
             end("You lost! Press C to continue or Q to exit!", green)
