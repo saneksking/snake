@@ -37,13 +37,13 @@ font_style = pygame.font.SysFont("bahnschrift", 25)
 score_font = pygame.font.SysFont("comicsansms", 35)
 
 
-def our_snake(snake_block, snake_list, head_color):
+def our_snake(snake_body, snake_list, head_color):
     for x in snake_list[:-1]:
-        pygame.draw.rect(display, snake_color, [x[0], x[1], snake_block, snake_block], border_radius=5)
+        pygame.draw.rect(display, snake_color, [x[0], x[1], snake_body, snake_body], border_radius=5)
 
     head_x, head_y = snake_list[-1]
     pygame.draw.circle(display, head_color,
-                       (head_x + snake_block // 2, head_y + snake_block // 2), snake_block // 2)
+                       (head_x + snake_body // 2, head_y + snake_body // 2), snake_body // 2)
 
 
 def your_score(score):
@@ -252,7 +252,6 @@ def enter_nickname(score):
     active = False
     nickname = ''
 
-    # Создаем текст для надписи
     label_text = font_style.render("Enter your nickname:", True, green)
     label_rect = label_text.get_rect(center=(width / 2, input_box.top - 20))
 
@@ -365,7 +364,6 @@ def game_loop():
                         start_screen()
                         game_loop()
 
-        # Перемещение змейки
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 game_over = True
@@ -382,7 +380,7 @@ def game_loop():
                 elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
                     y1_change = snake_block
                     x1_change = 0
-                elif event.key == pygame.K_SPACE:  # Добавлено для паузы
+                elif event.key == pygame.K_SPACE:
                     paused = not paused
 
         if paused:
