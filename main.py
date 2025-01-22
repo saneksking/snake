@@ -1,10 +1,11 @@
 import os
 import sys
+import random
+from tools.database import save_score, get_leaderboard_records
+
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "1"
 
 import pygame
-import random
-
-from tools.database import save_score, get_leaderboard_records
 
 white = (255, 255, 255)
 yellow = (255, 255, 102)
@@ -27,14 +28,12 @@ def resource_path(relative_path):
 
 pygame.init()
 
-
 background_image = pygame.image.load(resource_path('data/images/snake.png'))
 background_music = resource_path('data/music/music.mp3')
 button_click_sound = pygame.mixer.Sound(resource_path('data/sounds/button.wav'))
 eat_sound = pygame.mixer.Sound(resource_path('data/sounds/eat.wav'))
 
 pygame.mixer.music.set_volume(0.5)
-
 
 title_font = pygame.font.SysFont("bahnschrift", 50)
 
@@ -66,7 +65,7 @@ def your_score(score):
     display.blit(value, [0, 0])
 
 
-def end(msg, color):
+def messages_displayer(msg, color):
     message = font_style.render(msg, True, color)
     message_rect = message.get_rect(center=(width / 2, height / 2))
     display.blit(message, message_rect)
@@ -263,8 +262,8 @@ def enter_nickname(score):
 
     color_inactive = pygame.Color('lightskyblue3')
     color_active = pygame.Color('dodgerblue2')
-    color = color_inactive
-    active = False
+    color = color_active  # Устанавливаем активный цвет сразу
+    active = True  # Устанавливаем активное состояние сразу
     nickname = ''
 
     label_text = font_style.render("Enter your nickname:", True, green)
@@ -278,20 +277,21 @@ def enter_nickname(score):
 
         txt_surface = font_style.render(nickname, True, color)
         input_box.w = max(200, txt_surface.get_width() + 10)
+
         pygame.draw.rect(display, white, input_box)
         display.blit(txt_surface, (input_box.x + 5, input_box.y + 5))
         pygame.draw.rect(display, color, input_box, 2)
+
+        # Добавляем текстовое сообщение о фокусировке
+        if active:
+            focus_text = font_style.render("Type your nickname and press ENTER", True, green)
+            focus_rect = focus_text.get_rect(center=(width / 2, input_box.bottom + 20))
+            display.blit(focus_text, focus_rect)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if input_box.collidepoint(event.pos):
-                    active = not active
-                else:
-                    active = False
-                color = color_active if active else color_inactive
             if event.type == pygame.KEYDOWN:
                 if active:
                     if event.key == pygame.K_RETURN:
@@ -324,6 +324,7 @@ def show_leaderboard_screen():
     while True:
         display.fill(blue)
         display_leaderboard(records)
+        messages_displayer('Press Q for quit.', green)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -355,6 +356,8 @@ def game_loop():
     foodx = round(random.randrange(0, width - snake_block) / 10.0) * 10.0
     foody = round(random.randrange(0, height - snake_block) / 10.0) * 10.0
 
+    current_direction = None  # Добавляем переменную для хранения текущего направления
+
     while not game_over:
         while game_close:
             display.fill(blue)
@@ -363,7 +366,7 @@ def game_loop():
             pygame.mixer.music.load(resource_path('data/music/game_over.mp3'))
             pygame.mixer.music.play(-1)
 
-            end("You lost! Press C to continue or Q to exit!", green)
+            messages_displayer("You lost! Press C to continue or Q to exit!", green)
             your_score(score * snake_speed)
             pygame.display.update()
 
@@ -384,23 +387,31 @@ def game_loop():
                 game_over = True
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_a:
-                    x1_change = -snake_block
-                    y1_change = 0
+                    if current_direction != 'RIGHT':  # Проверяем, не движется ли змейка вправо
+                        x1_change = -snake_block
+                        y1_change = 0
+                        current_direction = 'LEFT'  # Обновляем текущее направление
                 elif event.key == pygame.K_RIGHT or event.key == pygame.K_d:
-                    x1_change = snake_block
-                    y1_change = 0
+                    if current_direction != 'LEFT':  # Проверяем, не движется ли змейка влево
+                        x1_change = snake_block
+                        y1_change = 0
+                        current_direction = 'RIGHT'  # Обновляем текущее направление
                 elif event.key == pygame.K_UP or event.key == pygame.K_w:
-                    y1_change = -snake_block
-                    x1_change = 0
+                    if current_direction != 'DOWN':  # Проверяем, не движется ли змейка вниз
+                        y1_change = -snake_block
+                        x1_change = 0
+                        current_direction = 'UP'  # Обновляем текущее направление
                 elif event.key == pygame.K_DOWN or event.key == pygame.K_s:
-                    y1_change = snake_block
-                    x1_change = 0
+                    if current_direction != 'UP':  # Проверяем, не движется ли змейка вверх
+                        y1_change = snake_block
+                        x1_change = 0
+                        current_direction = 'DOWN'  # Обновляем текущее направление
                 elif event.key == pygame.K_SPACE:
                     paused = not paused
 
         if paused:
             display.fill(blue)
-            end("Paused! Press SPACE to continue", green)
+            messages_displayer("Paused! Press SPACE to continue", green)
             your_score(score * snake_speed)
             pygame.display.update()
             continue
@@ -428,7 +439,7 @@ def game_loop():
 
         if x1 == foodx and y1 == foody:
             foodx = round(random.randrange(0, width - snake_block) / 10.0) * 10.0
-            foody = round(random.randrange(0, height - snake_block) / 10.0) * 10.0
+            foody = round(random.randrange(0, height - snake_block) / 10.0) * 10
             length_of_snake += 1
             score += 1
             eat_sound.play()
