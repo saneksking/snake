@@ -1,6 +1,8 @@
 import os
 import sys
 import random
+import webbrowser
+
 from tools.database import save_score, get_leaderboard_records
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "1"
@@ -65,7 +67,7 @@ def your_score(score):
     display.blit(value, [0, 0])
 
 
-def messages_displayer(msg, color):
+def messages_display(msg, color):
     message = font_style.render(msg, True, color)
     message_rect = message.get_rect(center=(width / 2, height / 2))
     display.blit(message, message_rect)
@@ -74,8 +76,11 @@ def messages_displayer(msg, color):
 def draw_start_buttons():
     start_button_color = (148, 148, 27)
     settings_button_color = (120, 188, 153)
+    about_button_color = (0, 0, 0)
+
     start_button_rect = pygame.Rect(width / 4, height / 3, width / 2, 50)
     settings_button_rect = pygame.Rect(width / 4, height / 2, width / 2, 50)
+    about_button_rect = pygame.Rect(width / 4, height / 1.5, width / 2, 50)
 
     mouse_pos = pygame.mouse.get_pos()
 
@@ -86,16 +91,19 @@ def draw_start_buttons():
 
     pygame.draw.rect(display, start_button_color, start_button_rect, border_radius=10)
     pygame.draw.rect(display, settings_button_color, settings_button_rect, border_radius=10)
+    pygame.draw.rect(display, about_button_color, about_button_rect, border_radius=10)
 
     start_text = font_style.render("Start", True, white)
     settings_text = font_style.render("Settings", True, white)
+    about_text = font_style.render("About", True, white)
 
     display.blit(start_text, (start_button_rect.x + (start_button_rect.width - start_text.get_width())
                               / 2, start_button_rect.y + 10))
     display.blit(settings_text, (settings_button_rect.x + (settings_button_rect.width - settings_text.get_width())
                                  / 2, settings_button_rect.y + 10))
-
-    return start_button_rect, settings_button_rect
+    display.blit(about_text, (about_button_rect.x + (about_button_rect.width - about_text.get_width())
+                              / 2, about_button_rect.y + 10))
+    return start_button_rect, settings_button_rect, about_button_rect
 
 
 def settings_screen():
@@ -222,6 +230,7 @@ def start_screen():
     pygame.mixer.music.stop()
     pygame.mixer.music.load(resource_path('data/music/music.mp3'))
     pygame.mixer.music.play(-1)
+
     while True:
         display.blit(background_image, (0, 0))
 
@@ -237,7 +246,7 @@ def start_screen():
 
         display.blit(title_text, (title_rect.x, title_rect.y + padding))
 
-        start_button_rect, settings_button_rect = draw_start_buttons()
+        start_button_rect, settings_button_rect, about_button_rect = draw_start_buttons()
         pygame.display.update()
 
         for event in pygame.event.get():
@@ -252,6 +261,9 @@ def start_screen():
                 elif settings_button_rect.collidepoint(event.pos):
                     button_click_sound.play()
                     settings_screen()
+                elif about_button_rect.collidepoint(event.pos):
+                    button_click_sound.play()
+                    webbrowser.open("https://www.github.com/saneksking")
 
 
 def enter_nickname(score):
@@ -262,8 +274,8 @@ def enter_nickname(score):
 
     color_inactive = pygame.Color('lightskyblue3')
     color_active = pygame.Color('dodgerblue2')
-    color = color_active  # Устанавливаем активный цвет сразу
-    active = True  # Устанавливаем активное состояние сразу
+    color = color_active
+    active = True
     nickname = ''
 
     label_text = font_style.render("Enter your nickname:", True, green)
@@ -282,7 +294,6 @@ def enter_nickname(score):
         display.blit(txt_surface, (input_box.x + 5, input_box.y + 5))
         pygame.draw.rect(display, color, input_box, 2)
 
-        # Добавляем текстовое сообщение о фокусировке
         if active:
             focus_text = font_style.render("Type your nickname and press ENTER", True, green)
             focus_rect = focus_text.get_rect(center=(width / 2, input_box.bottom + 20))
@@ -321,11 +332,10 @@ def display_leaderboard(records):
 
 def show_leaderboard_screen():
     records = get_leaderboard_records()
+    display.fill(blue)
+    messages_display('Press Q for quit.', green)
+    display_leaderboard(records)
     while True:
-        display.fill(blue)
-        display_leaderboard(records)
-        messages_displayer('Press Q for quit.', green)
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -366,7 +376,7 @@ def game_loop():
             pygame.mixer.music.load(resource_path('data/music/game_over.mp3'))
             pygame.mixer.music.play(-1)
 
-            messages_displayer("You lost! Press C to continue or Q to exit!", green)
+            messages_display("You lost! Press C to continue or Q to exit!", green)
             your_score(score * snake_speed)
             pygame.display.update()
 
@@ -411,7 +421,7 @@ def game_loop():
 
         if paused:
             display.fill(blue)
-            messages_displayer("Paused! Press SPACE to continue", green)
+            messages_display("Paused! Press SPACE to continue", green)
             your_score(score * snake_speed)
             pygame.display.update()
             continue
